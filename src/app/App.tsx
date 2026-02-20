@@ -203,8 +203,13 @@ export default function App() {
           <div className="flex items-center justify-between">
             {/* Logo Wordmark */}
             <div className="flex items-center gap-3">
-              <Coffee className="w-8 h-8 text-[var(--espresso)]" strokeWidth={2.5} />
-              <h1 className="text-4xl text-[var(--espresso)]">HomeBrewz</h1>
+              <button 
+                onClick={() => setActiveTab('products')}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <Coffee className="w-8 h-8 text-[var(--espresso)]" strokeWidth={2.5} />
+                <h1 className="text-4xl text-[var(--espresso)]">HomeBrewz</h1>
+              </button>
             </div>
             
             <div className="flex items-center gap-4">
