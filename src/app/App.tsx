@@ -13,18 +13,80 @@ import { OrderConfirmationPage } from './components/OrderConfirmationPage';
 import { TechStack } from './components/TechStack';
 import { SiteMap } from './components/SiteMap';
 import { BrewingMethodModal, BrewingMethodType } from './components/BrewingMethodModal';
+import { MembershipCheckoutPage, MembershipTier } from './components/MembershipCheckoutPage';
+import { MembershipConfirmationPage } from './components/MembershipConfirmationPage';
+import { MembershipBillingModal } from './components/MembershipBillingModal';
 
 export default function App() {
   const [selectedRoast, setSelectedRoast] = useState<string>('all');
   const [selectedOrigin, setSelectedOrigin] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'products' | 'subscription' | 'guide' | 'quiz' | 'product-detail' | 'checkout' | 'order-confirmation'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'subscription' | 'guide' | 'quiz' | 'product-detail' | 'checkout' | 'order-confirmation' | 'membership-checkout' | 'membership-confirmation'>('products');
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orderNumber, setOrderNumber] = useState<string>('');
   const [confirmedItems, setConfirmedItems] = useState<CartItem[]>([]);
   const [brewingModalOpen, setBrewingModalOpen] = useState(false);
   const [selectedBrewingMethod, setSelectedBrewingMethod] = useState<BrewingMethodType | null>(null);
+  const [selectedMembershipTier, setSelectedMembershipTier] = useState<MembershipTier>('basic');
+  const [subscriptionId, setSubscriptionId] = useState<string>('');
+  const [membershipBillingCycle, setMembershipBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [membershipModalOpen, setMembershipModalOpen] = useState(false);
+
+  const membershipData = {
+    basic: {
+      name: 'Coffee Lover',
+      monthlyPrice: 1200,
+      annualPrice: 10200,
+      products: [
+        { name: 'Ethiopian Yirgacheffe', size: '12oz', roast: 'Light' }
+      ]
+    },
+    premium: {
+      name: 'Coffee Connoisseur',
+      monthlyPrice: 2800,
+      annualPrice: 23800,
+      products: [
+        { name: 'Ethiopian Yirgacheffe', size: '12oz', roast: 'Light' },
+        { name: 'Colombian Supremo', size: '12oz', roast: 'Medium' }
+      ]
+    },
+    elite: {
+      name: 'Coffee Master',
+      monthlyPrice: 4800,
+      annualPrice: 40800,
+      products: [
+        { name: 'Ethiopian Yirgacheffe', size: '12oz', roast: 'Light' },
+        { name: 'Colombian Supremo', size: '12oz', roast: 'Medium' },
+        { name: 'Sumatra Mandheling', size: '12oz', roast: 'Dark' },
+        { name: 'Kenyan AA', size: '12oz', roast: 'Light' }
+      ]
+    }
+  };
+
+  const addMembershipToCart = (tier: MembershipTier, billingCycle: 'monthly' | 'annual') => {
+    const membership = membershipData[tier];
+    const priceCents = billingCycle === 'monthly' ? membership.monthlyPrice : membership.annualPrice;
+    
+    const membershipItem: CartItem = {
+      id: `membership-${tier}-${billingCycle}`,
+      name: membership.name,
+      priceCents,
+      quantity: 1,
+      type: 'membership',
+      membershipTier: tier,
+      billingCycle,
+      includedProducts: membership.products
+    };
+
+    // Remove any existing memberships and add the new one
+    setCartItems(prev => {
+      const withoutMemberships = prev.filter(item => item.type !== 'membership');
+      return [...withoutMemberships, membershipItem];
+    });
+    
+    setCartOpen(true);
+  };
 
   const products = [
     {
@@ -160,6 +222,62 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
+        {/* Checkout Preview */}
+        {activeTab === 'checkout' && (
+          <CheckoutPage
+            items={cartItems}
+            onBack={() => setActiveTab('products')}
+            onComplete={(orderId: string) => {
+              // Store the orderId from payment service
+              setOrderNumber(orderId);
+              setConfirmedItems([...cartItems]);
+              // Clear cart and show confirmation
+              setCartItems([]);
+              setActiveTab('order-confirmation');
+            }}
+          />
+        )}
+
+        {/* Order Confirmation Preview */}
+        {activeTab === 'order-confirmation' && (
+          <OrderConfirmationPage
+            orderNumber={orderNumber}
+            items={confirmedItems}
+            onBackToHome={() => setActiveTab('products')}
+            onTrackOrder={() => {
+              alert('Demo Mode: Order tracking feature coming soon!');
+            }}
+          />
+        )}
+
+        {/* Membership Checkout Preview */}
+        {activeTab === 'membership-checkout' && (
+          <MembershipCheckoutPage
+            tier={selectedMembershipTier}
+            onBack={() => setActiveTab('subscription')}
+            onComplete={(subscriptionId: string, billingCycle: 'monthly' | 'annual') => {
+              // Store the subscriptionId and billing cycle
+              setSubscriptionId(subscriptionId);
+              setMembershipBillingCycle(billingCycle);
+              // Show confirmation
+              setActiveTab('membership-confirmation');
+            }}
+          />
+        )}
+
+        {/* Membership Confirmation Preview */}
+        {activeTab === 'membership-confirmation' && (
+          <MembershipConfirmationPage
+            subscriptionId={subscriptionId}
+            tier={selectedMembershipTier}
+            billingCycle={membershipBillingCycle}
+            onBackToHome={() => setActiveTab('products')}
+          />
+        )}
+
+        {/* All other content - only show when not in checkout/confirmation flows */}
+        {!['checkout', 'order-confirmation', 'membership-checkout', 'membership-confirmation'].includes(activeTab) && (
+          <>
         {/* Hero Section */}
         <section className="mb-16 text-center">
           <Badge variant="new" className="mb-4">New Launch</Badge>
@@ -409,7 +527,10 @@ export default function App() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="ghost" className="w-full">Get Started</Button>
+                  <Button variant="ghost" className="w-full" onClick={() => {
+                    setSelectedMembershipTier('basic');
+                    setMembershipModalOpen(true);
+                  }}>Get Started</Button>
                 </CardFooter>
               </Card>
 
@@ -456,7 +577,10 @@ export default function App() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="primary" className="w-full">Get Started</Button>
+                  <Button variant="primary" className="w-full" onClick={() => {
+                    setSelectedMembershipTier('premium');
+                    setMembershipModalOpen(true);
+                  }}>Get Started</Button>
                 </CardFooter>
               </Card>
 
@@ -504,7 +628,10 @@ export default function App() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="secondary" className="w-full">Get Started</Button>
+                  <Button variant="secondary" className="w-full" onClick={() => {
+                    setSelectedMembershipTier('elite');
+                    setMembershipModalOpen(true);
+                  }}>Get Started</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -817,33 +944,7 @@ export default function App() {
             <TechStack />
           </div>
         </section>
-
-        {/* Checkout Preview */}
-        {activeTab === 'checkout' && (
-          <CheckoutPage
-            items={cartItems}
-            onBack={() => setActiveTab('products')}
-            onComplete={(orderId: string) => {
-              // Store the orderId from payment service
-              setOrderNumber(orderId);
-              setConfirmedItems([...cartItems]);
-              // Clear cart and show confirmation
-              setCartItems([]);
-              setActiveTab('order-confirmation');
-            }}
-          />
-        )}
-
-        {/* Order Confirmation Preview */}
-        {activeTab === 'order-confirmation' && (
-          <OrderConfirmationPage
-            orderNumber={orderNumber}
-            items={confirmedItems}
-            onBackToHome={() => setActiveTab('products')}
-            onTrackOrder={() => {
-              alert('Demo Mode: Order tracking feature coming soon!');
-            }}
-          />
+          </>
         )}
       </main>
 
@@ -876,6 +977,16 @@ export default function App() {
         isOpen={brewingModalOpen}
         method={selectedBrewingMethod}
         onClose={() => setBrewingModalOpen(false)}
+      />
+
+      {/* Membership Billing Modal */}
+      <MembershipBillingModal
+        isOpen={membershipModalOpen}
+        tier={selectedMembershipTier}
+        onClose={() => setMembershipModalOpen(false)}
+        onSelectBilling={(tier, billingCycle) => {
+          addMembershipToCart(tier, billingCycle);
+        }}
       />
     </div>
   );

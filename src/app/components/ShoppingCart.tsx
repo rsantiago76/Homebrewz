@@ -6,9 +6,19 @@ import { formatPrice } from '../data/products';
 export interface CartItem {
   id: string;
   name: string;
-  priceCents: number; // Price in cents
+  priceCents: number;
   quantity: number;
+  image?: string;
   size?: string;
+  roast?: string;
+  type?: 'product' | 'membership';
+  membershipTier?: 'basic' | 'premium' | 'elite';
+  billingCycle?: 'monthly' | 'annual';
+  includedProducts?: Array<{
+    name: string;
+    size: string;
+    roast: string;
+  }>;
   customization?: {
     milk?: string;
     sweetness?: string;
@@ -126,16 +136,38 @@ export function ShoppingCart({ isOpen, onClose, items, onUpdateQuantity, onRemov
                       >
                         <div className="flex gap-4">
                           <motion.div 
-                            className={`w-20 h-20 flex-shrink-0 rounded-lg bg-gradient-to-br shadow-sm from-[var(--caramel)] to-[var(--espresso)]`}
+                            className={`w-20 h-20 flex-shrink-0 rounded-lg bg-gradient-to-br shadow-sm ${
+                              item.type === 'membership' 
+                                ? 'from-[var(--forest)] to-[var(--espresso)]'
+                                : 'from-[var(--caramel)] to-[var(--espresso)]'
+                            }`}
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1 min-w-0 pr-2">
+                                {item.type === 'membership' && (
+                                  <span className="inline-block px-2 py-0.5 bg-[var(--forest)] text-white text-xs font-bold rounded mb-1 uppercase">
+                                    Subscription
+                                  </span>
+                                )}
                                 <h4 className="text-[var(--espresso)] truncate" style={{ fontSize: '1rem' }}>{item.name}</h4>
-                                {item.size && (
-                                  <p className="text-sm text-[var(--muted-foreground)]">{item.size}</p>
+                                {item.type === 'membership' ? (
+                                  <>
+                                    <p className="text-sm text-[var(--muted-foreground)] capitalize">
+                                      {item.billingCycle} billing
+                                    </p>
+                                    {item.includedProducts && item.includedProducts.length > 0 && (
+                                      <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                                        Includes {item.includedProducts.length} bag{item.includedProducts.length > 1 ? 's' : ''}/month
+                                      </p>
+                                    )}
+                                  </>
+                                ) : (
+                                  item.size && (
+                                    <p className="text-sm text-[var(--muted-foreground)]">{item.size}</p>
+                                  )
                                 )}
                                 {item.customization && (
                                   <p className="text-xs text-[var(--muted-foreground)] mt-1">
@@ -156,27 +188,33 @@ export function ShoppingCart({ isOpen, onClose, items, onUpdateQuantity, onRemov
                               </motion.button>
                             </div>
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 bg-[var(--white)] rounded-lg p-1 shadow-sm">
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                                  className="p-1 hover:bg-[var(--cream)] rounded transition-colors"
-                                >
-                                  <Minus className="w-4 h-4 text-[var(--espresso)]" />
-                                </motion.button>
-                                <span className="w-8 text-center font-semibold text-[var(--espresso)]">
-                                  {item.quantity}
-                                </span>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                  className="p-1 hover:bg-[var(--cream)] rounded transition-colors"
-                                >
-                                  <Plus className="w-4 h-4 text-[var(--espresso)]" />
-                                </motion.button>
-                              </div>
+                              {item.type === 'membership' ? (
+                                <div className="text-xs text-[var(--muted-foreground)]">
+                                  Qty: {item.quantity}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 bg-[var(--white)] rounded-lg p-1 shadow-sm">
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                                    className="p-1 hover:bg-[var(--cream)] rounded transition-colors"
+                                  >
+                                    <Minus className="w-4 h-4 text-[var(--espresso)]" />
+                                  </motion.button>
+                                  <span className="w-8 text-center font-semibold text-[var(--espresso)]">
+                                    {item.quantity}
+                                  </span>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                    className="p-1 hover:bg-[var(--cream)] rounded transition-colors"
+                                  >
+                                    <Plus className="w-4 h-4 text-[var(--espresso)]" />
+                                  </motion.button>
+                                </div>
+                              )}
                               <motion.span 
                                 key={item.priceCents * item.quantity}
                                 initial={{ scale: 1.2, color: 'var(--caramel)' }}
@@ -184,6 +222,11 @@ export function ShoppingCart({ isOpen, onClose, items, onUpdateQuantity, onRemov
                                 className="font-bold"
                               >
                                 ${formatPrice(item.priceCents * item.quantity)}
+                                {item.type === 'membership' && (
+                                  <span className="text-xs text-[var(--muted-foreground)] ml-1">
+                                    /{item.billingCycle === 'monthly' ? 'mo' : 'yr'}
+                                  </span>
+                                )}
                               </motion.span>
                             </div>
                           </div>
