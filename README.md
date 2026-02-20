@@ -1,1 +1,11 @@
-# repo-template
+
+  # HomeBrewz UI Design
+
+  This is a code bundle for HomeBrewz UI Design. The original project is available at https://www.figma.com/design/ta5EXiRFNpB3rkMOrzSpDI/HomeBrewz-UI-Design.
+
+  ## Running the code
+
+  Run `npm i` to install the dependencies.
+
+  Run `npm run dev` to start the development server.
+  
