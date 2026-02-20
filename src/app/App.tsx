@@ -216,8 +216,13 @@ export default function App() {
               <Button variant="ghost" size="sm">
                 <Heart className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setCartOpen(true)}>
+              <Button variant="ghost" size="sm" onClick={() => setCartOpen(true)} className="relative">
                 <ShoppingCart className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[var(--caramel)] text-[var(--white)] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
               </Button>
               <Button variant="primary" size="sm">Sign In</Button>
             </div>
